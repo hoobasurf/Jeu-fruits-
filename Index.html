@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jeu de sélection de fruits</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #e0f7fa;
+    margin: 20px;
+    text-align: center;
+    user-select: none;
+  }
+  h1 {
+    color: #00796b;
+  }
+  #objective {
+    margin: 10px 0;
+    font-size: 18px;
+    color: #004d40;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(6, 60px);
+    grid-gap: 10px;
+    justify-content: center;
+    margin: 20px auto;
+    touch-action: none; /* important for touch events */
+  }
+  .cell {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .cell.selected {
+    border: 3px solid #00796b;
+  }
+  .cell img {
+    width: 40px;
+    height: 40px;
+    pointer-events: none;
+    user-select: none;
+  }
+  #scoreboard {
+    font-size: 18px;
+    margin-top: 15px;
+    color: #004d40;
+  }
+  #nextBtn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #00796b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  #nextBtn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h1>Jeu de Sélection de Fruits</h1>
+<div id="objective"></div>
+
+<div id="grid"></div>
+
+<div id="scoreboard"></div>
+<button id="nextBtn" disabled>Manche Suivante</button>
+
+<script>
+  // Liste fruits + légumes
+  const fruitsLegumes = [
+    {name: "Ananas", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Pineapple_and_cross_section.jpg"},
+    {name: "Fraise", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/PerfectStrawberry.jpg"},
+    {name: "Banane", img: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg"},
+    {name: "Carotte", img: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Carrot_on_white_background.jpg"},
+    {name: "Tomate", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/Bright_red_tomato_and_cross_section02.jpg"},
+    {name: "Pomme", img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
+  ];
+
+  // Objectifs pour chaque manche (exemple, tu peux augmenter les nombres)
+  const objectifs = [
+    {Ananas: 5, Fraise: 3, Banane: 4},
+    {Ananas: 6, Fraise: 2, Banane: 5},
+    {Ananas: 7, Fraise: 4, Banane: 3},
+    {Ananas: 8, Fraise: 5, Banane: 4},
+    {Ananas: 9, Fraise: 6, Banane: 5},
+    {Ananas: 10, Fraise: 7, Banane: 6},
+    {Ananas: 11, Fraise: 8, Banane: 7},
+    {Ananas: 12, Fraise: 9, Banane: 8},
+    {Ananas: 13, Fraise: 10, Banane: 9},
+    {Ananas: 14, Fraise: 11, Banane: 10},
+  ];
+
+  const grid = document.getElementById('grid');
+  const objectiveDiv = document.getElementById('objective');
+  const scoreboard = document.getElementById('scoreboard');
+  const nextBtn = document.getElementById('nextBtn');
+
+  let currentRound = 0;
+  let totalScore = 0;
+  let selectedCells = new Set();
+  let isDrawing = false;
+
+  // Fonction pour générer une grille aléatoire (36 cases ici)
+  function generateGrid() {
+    grid.innerHTML = '';
+    selectedCells.clear();
+    for(let i=0; i<36; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      // Choisir un fruit/legume au hasard
+      const item = fruitsLegumes[Math.floor(Math.random()*fruitsLegumes.length)];
+      cell.dataset.name = item.name;
+      cell.style.backgroundColor = 'white';
+
+      const img = document.createElement('img');
+      img.src = item.img;
+      img.alt = item.name;
+
+      cell.appendChild(img);
+      grid.appendChild(cell);
+    }
+  }
+
+  // Afficher objectif
+  function showObjective() {
+    const obj = objectifs[currentRound];
+    let txt = `Objectif: `;
+    for(let key in obj) {
+      txt += `${obj[key]} ${key}${obj[key]>1?'s':''}  `;
+    }
+    objectiveDiv.textContent = txt;
+  }
+
+  // Démarrer manche
+  function startRound() {
+    generateGrid();
+    showObjective();
+    selectedCells.clear();
+    scoreboard.textContent = '';
+    nextBtn.disabled = true;
+  }
+
+  // Calculer score manche
+  function calculateScore() {
+    const obj = objectifs[currentRound];
+    // Compter sélection par fruit
+    const counts = {};
+    selectedCells.forEach(cell => {
+      const name = cell.dataset.name;
+      counts[name] = (counts[name]||0) + 1;
+    });
+
+    // Calculer score = min entre sélection et objectif par fruit (pas de bonus si + que demandé)
+    let score = 0;
+    for(let key in obj) {
+      const val = counts[key] || 0;
+      score += Math.min(val, obj[key]);
+    }
+    return score;
+  }
+
+  // Afficher score manche
+  function showScore() {
+    const score = calculateScore();
+    scoreboard.textContent = `Score manche ${currentRound+1} : ${score}`;
+    totalScore += score;
+    nextBtn.disabled = false;
+  }
+
+  // Événements glisser-sélection
+  function onPointerDown(e) {
+    if(e.target.classList.contains('cell')) {
+      isDrawing = true;
+      selectCell(e.target);
+    }
+  }
+  function onPointerMove(e) {
+    if(!isDrawing) return;
+    const cell = document.elementFromPoint(e.clientX, e.clientY);
+    if(cell && cell.classList.contains('cell')) {
+      selectCell(cell);
+    }
+  }
+  function onPointerUp(e) {
+    if(isDrawing) {
+      isDrawing = false;
+      showScore();
+    }
+  }
+
+  // Sélectionner une cellule
+  function selectCell(cell) {
+    if(!selectedCells.has(cell)) {
+      selectedCells.add(cell);
+      cell.classList.add('selected');
+    }
+  }
+
+  nextBtn.addEventListener('click', () => {
+    currentRound++;
+    if(currentRound >= objectifs.length) {
+      alert(`Fin du jeu ! Score total : ${totalScore}`);
+      // Réinitialiser jeu
+      currentRound = 0;
+      totalScore = 0;
+    }
+    startRound();
+  });
+
+  // Initialisation
+  startRound();
+
+  // Ajouter écouteurs pointer events (compatible souris et tactile)
+  grid.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+</script>
+
+</body>
+</html>
