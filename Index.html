@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jeu de sélection de fruits</title>
+<title>Jeu de sélection de fruits avec descente</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -26,7 +26,7 @@
     grid-gap: 10px;
     justify-content: center;
     margin: 20px auto;
-    touch-action: none; /* important for touch events */
+    touch-action: none;
   }
   .cell {
     width: 60px;
@@ -73,7 +73,7 @@
 </head>
 <body>
 
-<h1>Jeu de Sélection de Fruits</h1>
+<h1>Jeu de Sélection de Fruits avec Descente</h1>
 <div id="objective"></div>
 
 <div id="grid"></div>
@@ -82,7 +82,6 @@
 <button id="nextBtn" disabled>Manche Suivante</button>
 
 <script>
-  // Liste fruits + légumes
   const fruitsLegumes = [
     {name: "Ananas", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Pineapple_and_cross_section.jpg"},
     {name: "Fraise", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/PerfectStrawberry.jpg"},
@@ -92,7 +91,6 @@
     {name: "Pomme", img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
   ];
 
-  // Objectifs pour chaque manche (exemple, tu peux augmenter les nombres)
   const objectifs = [
     {Ananas: 5, Fraise: 3, Banane: 4},
     {Ananas: 6, Fraise: 2, Banane: 5},
@@ -111,34 +109,55 @@
   const scoreboard = document.getElementById('scoreboard');
   const nextBtn = document.getElementById('nextBtn');
 
+  const ROWS = 6;
+  const COLS = 6;
+
   let currentRound = 0;
   let totalScore = 0;
   let selectedCells = new Set();
   let isDrawing = false;
 
-  // Fonction pour générer une grille aléatoire (36 cases ici)
-  function generateGrid() {
-    grid.innerHTML = '';
-    selectedCells.clear();
-    for(let i=0; i<36; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
+  // La grille sous forme de tableau 2D stockant les objets fruitsLegumes
+  let board = [];
 
-      // Choisir un fruit/legume au hasard
-      const item = fruitsLegumes[Math.floor(Math.random()*fruitsLegumes.length)];
-      cell.dataset.name = item.name;
-      cell.style.backgroundColor = 'white';
+  function randomItem() {
+    return fruitsLegumes[Math.floor(Math.random() * fruitsLegumes.length)];
+  }
 
-      const img = document.createElement('img');
-      img.src = item.img;
-      img.alt = item.name;
-
-      cell.appendChild(img);
-      grid.appendChild(cell);
+  function initBoard() {
+    board = [];
+    for(let r=0; r<ROWS; r++) {
+      let row = [];
+      for(let c=0; c<COLS; c++) {
+        row.push(randomItem());
+      }
+      board.push(row);
     }
   }
 
-  // Afficher objectif
+  function renderBoard() {
+    grid.innerHTML = '';
+    for(let r=0; r<ROWS; r++) {
+      for(let c=0; c<COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        const item = board[r][c];
+        if(item) {
+          const img = document.createElement('img');
+          img.src = item.img;
+          img.alt = item.name;
+          cell.dataset.name = item.name;
+          cell.appendChild(img);
+        } else {
+          cell.dataset.name = '';
+        }
+        grid.appendChild(cell);
+      }
+    }
+  }
+
   function showObjective() {
     const obj = objectifs[currentRound];
     let txt = `Objectif: `;
@@ -148,26 +167,54 @@
     objectiveDiv.textContent = txt;
   }
 
-  // Démarrer manche
   function startRound() {
-    generateGrid();
+    if(currentRound === 0) {
+      initBoard();
+    }
+    renderBoard();
     showObjective();
     selectedCells.clear();
     scoreboard.textContent = '';
     nextBtn.disabled = true;
   }
 
-  // Calculer score manche
+  // Supprime les cases sélectionnées dans la grille (board)
+  function removeSelectedCells() {
+    selectedCells.forEach(cell => {
+      const r = parseInt(cell.dataset.row);
+      const c = parseInt(cell.dataset.col);
+      board[r][c] = null;
+    });
+  }
+
+  // Fait "descendre" les éléments pour combler les trous
+  function gravity() {
+    for(let c=0; c<COLS; c++) {
+      let pointer = ROWS - 1;
+      for(let r=ROWS-1; r>=0; r--) {
+        if(board[r][c] !== null) {
+          if(r !== pointer) {
+            board[pointer][c] = board[r][c];
+            board[r][c] = null;
+          }
+          pointer--;
+        }
+      }
+      // Remplir le haut avec nouveaux items
+      for(let r=pointer; r>=0; r--) {
+        board[r][c] = randomItem();
+      }
+    }
+  }
+
   function calculateScore() {
     const obj = objectifs[currentRound];
-    // Compter sélection par fruit
     const counts = {};
     selectedCells.forEach(cell => {
       const name = cell.dataset.name;
       counts[name] = (counts[name]||0) + 1;
     });
 
-    // Calculer score = min entre sélection et objectif par fruit (pas de bonus si + que demandé)
     let score = 0;
     for(let key in obj) {
       const val = counts[key] || 0;
@@ -176,7 +223,6 @@
     return score;
   }
 
-  // Afficher score manche
   function showScore() {
     const score = calculateScore();
     scoreboard.textContent = `Score manche ${currentRound+1} : ${score}`;
@@ -184,7 +230,13 @@
     nextBtn.disabled = false;
   }
 
-  // Événements glisser-sélection
+  function selectCell(cell) {
+    if(!selectedCells.has(cell) && cell.dataset.name) {
+      selectedCells.add(cell);
+      cell.classList.add('selected');
+    }
+  }
+
   function onPointerDown(e) {
     if(e.target.classList.contains('cell')) {
       isDrawing = true;
@@ -201,15 +253,12 @@
   function onPointerUp(e) {
     if(isDrawing) {
       isDrawing = false;
+      if(selectedCells.size === 0) return;
       showScore();
-    }
-  }
-
-  // Sélectionner une cellule
-  function selectCell(cell) {
-    if(!selectedCells.has(cell)) {
-      selectedCells.add(cell);
-      cell.classList.add('selected');
+      removeSelectedCells();
+      gravity();
+      renderBoard();
+      selectedCells.clear();
     }
   }
 
@@ -217,9 +266,9 @@
     currentRound++;
     if(currentRound >= objectifs.length) {
       alert(`Fin du jeu ! Score total : ${totalScore}`);
-      // Réinitialiser jeu
       currentRound = 0;
       totalScore = 0;
+      initBoard();
     }
     startRound();
   });
@@ -227,7 +276,6 @@
   // Initialisation
   startRound();
 
-  // Ajouter écouteurs pointer events (compatible souris et tactile)
   grid.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
