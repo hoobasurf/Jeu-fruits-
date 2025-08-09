@@ -3,298 +3,325 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jeu Fruits/Légumes - Descente Animée & Interdits</title>
+<title>Jeu Fruits/Légumes - Glisser & Descente Animée</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
   body {
-    font-family: Arial, sans-serif;
-    background: #f0fafb;
-    margin: 20px;
-    text-align: center;
+    margin: 0; padding: 0;
+    font-family: 'Arial', sans-serif;
+    background: 
+      url('https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Wooden_texture_8-2.jpg/800px-Wooden_texture_8-2.jpg') no-repeat center center fixed;
+    background-size: cover;
     user-select: none;
+    overflow-x: hidden;
+    color: #fff;
   }
+
+  /* Maori tortue stylisée en SVG en fond */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="%23fff" stroke-width="2"><path d="M32 12c-8 0-16 10-16 22 0 8 16 18 16 18s16-10 16-18c0-12-8-22-16-22z"/><circle cx="32" cy="34" r="6"/></svg>') no-repeat center center;
+    background-size: contain;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #game-container {
+    max-width: 460px;
+    margin: 40px auto;
+    background: rgba(0, 77, 51, 0.7);
+    border-radius: 16px;
+    padding: 18px 14px 28px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    position: relative;
+    z-index: 1;
+  }
+
   h1 {
-    color: #00695c;
+    font-family: 'Pacifico', cursive;
+    font-size: 2.4rem;
+    margin-bottom: 8px;
+    color: #d7ccc8;
+    text-shadow: 1px 1px 3px #004d40;
   }
+
   #objective {
-    margin: 15px 0;
-    font-size: 18px;
-    color: #004d40;
+    margin: 10px 0 12px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffe0b2;
+    text-shadow: 0 0 4px #000000bb;
   }
-  #forbidden {
-    margin: 10px 0;
-    font-weight: bold;
-    color: #d32f2f;
-  }
+
   #grid {
     display: grid;
-    grid-template-columns: repeat(6, 70px);
-    grid-gap: 8px;
+    grid-template-columns: repeat(6, 60px);
+    grid-template-rows: repeat(6, 60px);
+    gap: 10px;
     justify-content: center;
-    margin: 20px auto;
-    position: relative;
+    touch-action: none;
     user-select: none;
-    /* relative pour position absolue des images animées */
   }
+
   .cell {
-    width: 70px;
-    height: 70px;
-    background: #ffffffcc;
-    border-radius: 12px;
-    box-shadow: 0 3px 7px rgba(0,0,0,0.15);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: #fff8dcdd;
+    border-radius: 14px;
+    box-shadow: inset 0 3px 6px #a1887f88;
     position: relative;
     overflow: visible;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: transform 0.25s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .cell.empty {
     background: transparent;
     cursor: default;
   }
-  .cell.forbidden {
-    filter: grayscale(100%) brightness(0.7);
-    cursor: not-allowed;
-    position: relative;
-  }
-  .cell.forbidden::after {
-    content: "✕";
-    position: absolute;
-    top: 5px;
-    right: 7px;
-    font-size: 22px;
-    color: #d32f2f;
-  }
   .cell.selected {
-    outline: 3px solid #00796b;
+    outline: 3px solid #009688;
+    outline-offset: -3px;
+    transform: scale(1.15);
+    z-index: 5;
   }
+
   .cell img {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     pointer-events: none;
     user-select: none;
-    position: relative;
-    z-index: 1;
+    user-drag: none;
+    image-rendering: crisp-edges;
   }
+
   #scoreboard {
-    font-size: 18px;
-    margin-top: 10px;
-    color: #004d40;
+    margin-top: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff3e0;
+    text-shadow: 0 0 5px #000000cc;
   }
+
   #nextBtn {
-    margin-top: 18px;
-    padding: 10px 24px;
+    margin-top: 20px;
+    width: 160px;
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 14px;
     background: #00796b;
-    color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    color: #fff;
+    font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 4px 10px #004d40bb;
     user-select: none;
+    transition: background-color 0.3s ease;
   }
   #nextBtn:disabled {
-    background: #ccc;
+    background: #004d40;
     cursor: not-allowed;
+    box-shadow: none;
   }
 </style>
 </head>
 <body>
 
-<h1>Jeu Fruits/Légumes - Descente Animée & Interdits</h1>
-<div id="objective"></div>
-<div id="forbidden"></div>
-<div id="grid"></div>
-<div id="scoreboard"></div>
-<button id="nextBtn" disabled>Valider et Manche Suivante</button>
+<div id="game-container">
+  <h1>Fruits & Légumes</h1>
+  <div id="objective"></div>
+  <div id="grid"></div>
+  <div id="scoreboard"></div>
+  <button id="nextBtn" disabled>Valider et Manche Suivante</button>
+</div>
 
 <script>
-const fruitsLegumes = [
-  {name: "Ananas", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Pineapple_and_cross_section.jpg"},
-  {name: "Fraise", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/PerfectStrawberry.jpg"},
-  {name: "Banane", img: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg"},
-  {name: "Carotte", img: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Carrot_on_white_background.jpg"},
-  {name: "Tomate", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/Bright_red_tomato_and_cross_section02.jpg"},
-  {name: "Pomme", img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-];
+  const fruitsLegumes = [
+    {name: "Ananas", img: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Pineapple_and_cross_section.jpg"},
+    {name: "Fraise", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/PerfectStrawberry.jpg"},
+    {name: "Banane", img: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg"},
+    {name: "Carotte", img: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Carrot_on_white_background.jpg"},
+    {name: "Tomate", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/Bright_red_tomato_and_cross_section02.jpg"},
+    {name: "Pomme", img: "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
+  ];
 
-const objectifs = [
-  {Ananas: 5, Fraise: 3, Banane: 4},
-  {Ananas: 6, Fraise: 2, Banane: 5},
-  {Ananas: 7, Fraise: 4, Banane: 3},
-  {Ananas: 8, Fraise: 5, Banane: 4},
-  {Ananas: 9, Fraise: 6, Banane: 5},
-  {Ananas: 10, Fraise: 7, Banane: 6},
-  {Ananas: 11, Fraise: 8, Banane: 7},
-  {Ananas: 12, Fraise: 9, Banane: 8},
-  {Ananas: 13, Fraise: 10, Banane: 9},
-  {Ananas: 14, Fraise: 11, Banane: 10},
-];
+  const objectifs = [
+    {Ananas: 5, Fraise: 3, Banane: 4},
+    {Ananas: 6, Fraise: 2, Banane: 5},
+    {Ananas: 7, Fraise: 4, Banane: 3},
+    {Ananas: 8, Fraise: 5, Banane: 4},
+    {Ananas: 9, Fraise: 6, Banane: 5},
+    {Ananas: 10, Fraise: 7, Banane: 6},
+    {Ananas: 11, Fraise: 8, Banane: 7},
+    {Ananas: 12, Fraise: 9, Banane: 8},
+    {Ananas: 13, Fraise: 10, Banane: 9},
+    {Ananas: 14, Fraise: 11, Banane: 10},
+  ];
 
-const ROWS = 6;
-const COLS = 6;
+  const ROWS = 6;
+  const COLS = 6;
 
-const grid = document.getElementById('grid');
-const objectiveDiv = document.getElementById('objective');
-const forbiddenDiv = document.getElementById('forbidden');
-const scoreboard = document.getElementById('scoreboard');
-const nextBtn = document.getElementById('nextBtn');
+  const grid = document.getElementById('grid');
+  const objectiveDiv = document.getElementById('objective');
+  const scoreboard = document.getElementById('scoreboard');
+  const nextBtn = document.getElementById('nextBtn');
 
-let board = [];
-let selectedCells = new Set();
-let currentRound = 0;
-let totalScore = 0;
-let forbiddenFruit = null;
+  let board = [];
+  let selectedCells = new Set();
+  let currentRound = 0;
+  let totalScore = 0;
+  let currentSelectionName = null;
+  let isDragging = false;
 
-function randomItem() {
-  return fruitsLegumes[Math.floor(Math.random() * fruitsLegumes.length)];
-}
-
-function initBoard() {
-  board = [];
-  for(let r=0; r<ROWS; r++) {
-    let row = [];
-    for(let c=0; c<COLS; c++) {
-      row.push(randomItem());
-    }
-    board.push(row);
+  // Génère un fruit/légume aléatoire
+  function randomItem() {
+    return fruitsLegumes[Math.floor(Math.random() * fruitsLegumes.length)];
   }
-}
 
-function renderBoard() {
-  grid.innerHTML = '';
-  for(let r=0; r<ROWS; r++) {
-    for(let c=0; c<COLS; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-
-      const item = board[r][c];
-      if(item) {
-        const img = document.createElement('img');
-        img.src = item.img;
-        img.alt = item.name;
-        cell.dataset.name = item.name;
-        cell.appendChild(img);
-      } else {
-        cell.classList.add('empty');
-        cell.dataset.name = '';
+  // Initialisation du plateau
+  function initBoard() {
+    board = [];
+    for(let r=0; r<ROWS; r++) {
+      let row = [];
+      for(let c=0; c<COLS; c++) {
+        row.push(randomItem());
       }
-      if(item && item.name === forbiddenFruit) {
-        cell.classList.add('forbidden');
-      }
-      grid.appendChild(cell);
+      board.push(row);
     }
   }
-}
 
-function showObjective() {
-  const obj = objectifs[currentRound];
-  let txt = `Objectif : `;
-  for(let key in obj) {
-    txt += `${obj[key]} ${key}${obj[key]>1?'s':''}  `;
+  // Affichage du plateau
+  function renderBoard() {
+    grid.innerHTML = '';
+    for(let r=0; r<ROWS; r++) {
+      for(let c=0; c<COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.row = r;
+        cell.dataset.col = c;
+        const item = board[r][c];
+        if(item) {
+          const img = document.createElement('img');
+          img.src = item.img;
+          img.alt = item.name;
+          cell.dataset.name = item.name;
+          cell.appendChild(img);
+        } else {
+          cell.classList.add('empty');
+          cell.dataset.name = '';
+        }
+        if(selectedCells.has(cell)) {
+          cell.classList.add('selected');
+        }
+        grid.appendChild(cell);
+      }
+    }
   }
-  objectiveDiv.textContent = txt;
-}
 
-function showForbidden() {
-  forbiddenDiv.textContent = `Fruit/Légume interdit ce tour : ${forbiddenFruit}`;
-}
+  // Affiche l'objectif de la manche
+  function showObjective() {
+    const obj = objectifs[currentRound];
+    let txt = `Objectif : `;
+    for(let key in obj) {
+      txt += `${obj[key]} ${key}${obj[key] > 1 ? 's' : ''}  `;
+    }
+    objectiveDiv.textContent = txt;
+  }
 
-function updateForbiddenFruit() {
-  forbiddenFruit = fruitsLegumes[currentRound % fruitsLegumes.length].name;
-}
+  // Vérifie si une cellule peut être sélectionnée
+  function canSelect(cell) {
+    if(cell.classList.contains('empty')) return false;
+    const cellName = cell.dataset.name;
+    if(!currentSelectionName) return true;
+    return cellName === currentSelectionName;
+  }
 
-function canSelect(cell) {
-  if(cell.classList.contains('empty') || cell.classList.contains('forbidden')) return false;
-  if(selectedCells.has(cell)) return false;
-  return true;
-}
+  // Sélectionne une cellule (si possible)
+  function trySelectCell(cell) {
+    if(!canSelect(cell)) return false;
+    if(selectedCells.has(cell)) return false;
+    selectedCells.add(cell);
+    currentSelectionName = cell.dataset.name;
+    cell.classList.add('selected');
+    nextBtn.disabled = false;
+    return true;
+  }
 
-function selectCell(cell) {
-  if(!canSelect(cell)) return;
-  selectedCells.add(cell);
-  cell.classList.add('selected');
-  nextBtn.disabled = false;
-}
+  // Réinitialise la sélection
+  function clearSelection() {
+    selectedCells.forEach(c => c.classList.remove('selected'));
+    selectedCells.clear();
+    currentSelectionName = null;
+    nextBtn.disabled = true;
+  }
 
-function deselectAll() {
-  selectedCells.forEach(c => c.classList.remove('selected'));
-  selectedCells.clear();
-  nextBtn.disabled = true;
-}
+  // Supprime les fruits sélectionnés du plateau
+  function removeSelectedCells() {
+    selectedCells.forEach(cell => {
+      const r = +cell.dataset.row;
+      const c = +cell.dataset.col;
+      board[r][c] = null;
+    });
+  }
 
-function removeSelectedCells() {
-  selectedCells.forEach(cell => {
-    const r = +cell.dataset.row;
-    const c = +cell.dataset.col;
-    board[r][c] = null;
-  });
-}
-
-function gravity() {
-  // Met à jour le board en déplaçant les fruits vers le bas dans le tableau
-  for(let c=0; c<COLS; c++) {
-    for(let r=ROWS-1; r>=0; r--) {
-      if(board[r][c] === null) {
-        for(let rr=r-1; rr>=0; rr--) {
-          if(board[rr][c] !== null) {
-            board[r][c] = board[rr][c];
-            board[rr][c] = null;
-            break;
+  // Gravité : fait "tomber" les fruits vers le bas pour combler les trous
+  function gravity() {
+    for(let c=0; c<COLS; c++) {
+      for(let r=ROWS-1; r>=0; r--) {
+        if(board[r][c] === null) {
+          for(let rr=r-1; rr>=0; rr--) {
+            if(board[rr][c] !== null) {
+              board[r][c] = board[rr][c];
+              board[rr][c] = null;
+              break;
+            }
           }
         }
       }
     }
   }
-}
 
-function animateFall(callback) {
-  // Animation descendante des images sur la grille
-  // Pour chaque colonne, on calcule combien de cases vides il y a sous chaque fruit sélectionné ou déplacé
-  const cells = Array.from(grid.children);
-  const positions = cells.map(cell => cell.getBoundingClientRect());
+  // Animation descendante fluide des fruits
+  function animateFall(callback) {
+    const cells = Array.from(grid.children);
+    const positions = cells.map(cell => cell.getBoundingClientRect());
+    const animations = [];
 
-  // Clone les images pour animation en position absolue
-  const animations = [];
+    for(let c=0; c<COLS; c++) {
+      for(let r=0; r<ROWS; r++) {
+        const idx = r * COLS + c;
+        const cell = cells[idx];
+        const img = cell.querySelector('img');
+        if(!img) continue;
 
-  for(let c=0; c<COLS; c++) {
-    // Pour chaque colonne, calculer combien de cases vides sous chaque fruit
-    let emptyBelow = new Array(ROWS).fill(0);
-    // Compter cases vides sous chaque case
-    for(let r=ROWS-2; r>=0; r--) {
-      if(board[r][c] !== null) {
-        let count = 0;
+        // Trouve nouvelle position du fruit dans la colonne
+        let dropDistance = 0;
         for(let rr=r+1; rr<ROWS; rr++) {
-          if(board[rr][c] === null) count++;
+          if(board[rr][c] === null) dropDistance++;
           else break;
         }
-        emptyBelow[r] = count;
-      }
-    }
+        if(dropDistance === 0) continue;
 
-    for(let r=0; r<ROWS; r++) {
-      const idx = r * COLS + c;
-      const cell = cells[idx];
-      const img = cell.querySelector('img');
-      if(img && emptyBelow[r] > 0) {
         const rect = cell.getBoundingClientRect();
-        const moveY = emptyBelow[r] * (rect.height + 8); // 8 = grid gap
+        const moveY = dropDistance * (rect.height + 10); // 10 = gap
 
-        // Créer clone pour animation
         const clone = img.cloneNode(true);
         clone.style.position = 'absolute';
         clone.style.left = rect.left + 'px';
         clone.style.top = rect.top + 'px';
-        clone.style.transition = 'transform 0.5s ease';
+        clone.style.transition = 'transform 0.4s ease';
         clone.style.zIndex = 1000;
         document.body.appendChild(clone);
 
-        // Cacher image originale pour éviter doublon visuel pendant animation
         img.style.visibility = 'hidden';
 
-        // Anime la descente
         requestAnimationFrame(() => {
           clone.style.transform = `translateY(${moveY}px)`;
         });
@@ -302,82 +329,103 @@ function animateFall(callback) {
         animations.push({clone, originalImg: img});
       }
     }
+
+    setTimeout(() => {
+      animations.forEach(({clone, originalImg}) => {
+        clone.remove();
+        originalImg.style.visibility = 'visible';
+      });
+      callback();
+    }, 450);
   }
 
-  // Après 600ms, nettoyer et callback
-  setTimeout(() => {
-    animations.forEach(({clone, originalImg}) => {
-      clone.remove();
-      // Original sera réaffiché au prochain renderBoard
-      originalImg.style.visibility = 'visible';
+  // Calcul du score (nombre de fruits sélectionnés valides)
+  function calculateScore() {
+    const obj = objectifs[currentRound];
+    const counts = {};
+    selectedCells.forEach(cell => {
+      const name = cell.dataset.name;
+      counts[name] = (counts[name] || 0) + 1;
     });
-    callback();
-  }, 600);
-}
 
-function calculateScore() {
-  const obj = objectifs[currentRound];
-  const counts = {};
-  selectedCells.forEach(cell => {
-    const name = cell.dataset.name;
-    counts[name] = (counts[name]||0) + 1;
-  });
-
-  let score = 0;
-  for(let key in obj) {
-    const val = counts[key] || 0;
-    score += Math.min(val, obj[key]);
-  }
-  return score;
-}
-
-function showScore() {
-  const score = calculateScore();
-  scoreboard.textContent = `Score manche ${currentRound+1} : ${score} / Objectif possible`;
-  totalScore += score;
-}
-
-function startRound() {
-  updateForbiddenFruit();
-  showObjective();
-  showForbidden();
-  renderBoard();
-  deselectAll();
-  scoreboard.textContent = '';
-  nextBtn.disabled = true;
-}
-
-grid.addEventListener('pointerdown', e => {
-  if(e.target.closest('.cell')) {
-    const cell = e.target.closest('.cell');
-    selectCell(cell);
-  }
-});
-
-nextBtn.addEventListener('click', () => {
-  if(selectedCells.size === 0) return;
-  showScore();
-  animateFall(() => {
-    removeSelectedCells();
-    gravity();
-    renderBoard();
-    deselectAll();
-    currentRound++;
-    if(currentRound >= objectifs.length) {
-      alert(`Fin du jeu ! Score total : ${totalScore}`);
-      currentRound = 0;
-      totalScore = 0;
-      initBoard();
+    let score = 0;
+    for(let key in obj) {
+      const val = counts[key] || 0;
+      score += Math.min(val, obj[key]);
     }
-    startRound();
-  });
-});
+    return score;
+  }
 
-// Initialisation
-initBoard();
-startRound();
+  // Affiche le score actuel
+  function showScore() {
+    const score = calculateScore();
+    scoreboard.textContent = `Score manche ${currentRound + 1} : ${score} / Objectif`;
+  }
+
+  // Démarre une nouvelle manche
+  function startRound() {
+    clearSelection();
+    showObjective();
+    renderBoard();
+    scoreboard.textContent = '';
+  }
+
+  // Gestion du glisser pour sélectionner les fruits
+  let lastCell = null;
+
+  function pointerDownHandler(e) {
+    if(e.target.closest('.cell')) {
+      e.preventDefault();
+      isDragging = true;
+      const cell = e.target.closest('.cell');
+      if(trySelectCell(cell)) {
+        lastCell = cell;
+      }
+    }
+  }
+  function pointerMoveHandler(e) {
+    if(!isDragging) return;
+    if(e.target.closest('.cell')) {
+      const cell = e.target.closest('.cell');
+      if(cell !== lastCell && trySelectCell(cell)) {
+        lastCell = cell;
+      }
+    }
+  }
+  function pointerUpHandler(e) {
+    if(!isDragging) return;
+    isDragging = false;
+    lastCell = null;
+  }
+
+  grid.addEventListener('pointerdown', pointerDownHandler);
+  grid.addEventListener('pointermove', pointerMoveHandler);
+  window.addEventListener('pointerup', pointerUpHandler);
+
+  // Validation du tour
+  nextBtn.addEventListener('click', () => {
+    if(selectedCells.size === 0) return;
+    showScore();
+    animateFall(() => {
+      removeSelectedCells();
+      gravity();
+      renderBoard();
+      clearSelection();
+      currentRound++;
+      if(currentRound >= objectifs.length) {
+        alert(`Fin du jeu ! Score total : ${totalScore}`);
+        currentRound = 0;
+        totalScore = 0;
+        initBoard();
+      }
+      startRound();
+    });
+  });
+
+  // Init
+  initBoard();
+  startRound();
 
 </script>
-
 </body>
 </html>
