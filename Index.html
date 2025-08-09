@@ -1,159 +1,418 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu Fruits Mobile</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Jeu Fruits - Mobile 6x6</title>
 <style>
-    body {
-        margin: 0;
-        background: url('fruits.jpg') no-repeat center center fixed;
-        background-size: cover;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-    #game {
-        display: grid;
-        grid-template-columns: repeat(6, 60px);
-        grid-gap: 5px;
-        touch-action: none;
-    }
-    .cell {
-        width: 60px;
-        height: 60px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transition: transform 0.2s ease;
-    }
-    .cell img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        pointer-events: none;
-    }
-    .selected {
-        transform: scale(1.2);
-    }
+  :root{
+    --cols: 6;
+    --cell: 56px;   /* taille d'une case (ajuste si besoin) */
+    --gap: 8px;
+  }
+  html,body{height:100%;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
+  body{
+    background: url('fruits.jpg') center/cover no-repeat fixed;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Container téléphone vertical */
+  #wrap{
+    width: calc(var(--cols) * var(--cell) + (var(--cols)-1) * var(--gap));
+    max-width: 96vw;
+    padding: 14px;
+    background: rgba(0,0,0,0.28);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    -webkit-user-select:none;
+    user-select:none;
+  }
+
+  #title{
+    color: #fffdfa;
+    font-size: 1.1rem;
+    margin:6px 0 10px;
+    text-align:center;
+    font-weight:700;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  }
+
+  #grid{
+    display:grid;
+    grid-template-columns: repeat(var(--cols), var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: var(--gap);
+    justify-content: center;
+    touch-action: none; /* important pour drag tactile */
+    -webkit-touch-callout:none;
+  }
+
+  .cell{
+    width: var(--cell);
+    height: var(--cell);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: transparent; /* PAS de fond blanc */
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: transform .16s ease;
+    overflow: visible;
+  }
+
+  .cell.empty{ cursor: default; }
+
+  .cell.selected{
+    transform: scale(1.15);
+    z-index: 6;
+    /* légère ombre pour feedback */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+  }
+
+  /* Les SVG prennent l'espace de la case, restent transparents autour */
+  .cell svg{
+    width: 80%; height: 80%;
+    pointer-events:none;
+    display:block;
+  }
+
+  #info{
+    margin-top:10px;
+    color: #fffdf0;
+    font-size: 0.98rem;
+    text-align:center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  /* désactiver sélection de texte pendant drag */
+  * { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
 </style>
 </head>
 <body>
-
-<div id="game"></div>
+  <div id="wrap">
+    <div id="title">Jeu — sélection par glisser (6×6)</div>
+    <div id="grid" aria-hidden="false"></div>
+    <div id="info">Glisse ton doigt — lâche pour valider automatiquement</div>
+  </div>
 
 <script>
-const fruits = [
-    "ananas.png", "banane.png", "fraise.png",
-    "tomate.png", "pomme.png", "poire.png"
+/* ---------- CONFIG ---------- */
+const ROWS = 6;
+const COLS = 6;
+
+/* Liste des types de fruits (nom + fonction qui génère le SVG) */
+const FRUITS = [
+  { name: 'Ananas', svg: makePineappleSVG },
+  { name: 'Fraise', svg: makeStrawberrySVG },
+  { name: 'Banane', svg: makeBananaSVG },
+  { name: 'Tomate', svg: makeTomatoSVG },
+  { name: 'Pomme', svg: makeAppleSVG },
+  { name: 'Carotte', svg: makeCarrotSVG },
 ];
-const cols = 6;
-const rows = 10;
-let grid = [];
-let selectedCells = [];
-let selectedType = null;
 
-function createGrid() {
-    grid = [];
-    for (let r = 0; r < rows; r++) {
-        let row = [];
-        for (let c = 0; c < cols; c++) {
-            row.push(randomFruit());
-        }
-        grid.push(row);
+/* ---------- ÉTAT ---------- */
+let board = []; // board[r][c] = fruitIndex or null
+const gridEl = document.getElementById('grid');
+
+let isDragging = false;
+let selectionType = null; // string name of the fruit chosen at start of drag
+let selectedCells = [];   // array of DOM .cell elements selected this drag
+let selectedCoords = new Set(); // set of "r,c" strings for quick checks
+
+/* ---------- INITIALISATION ---------- */
+function randomFruitIndex(){ return Math.floor(Math.random()*FRUITS.length); }
+
+function initBoard(){
+  board = [];
+  for(let r=0;r<ROWS;r++){
+    const row=[];
+    for(let c=0;c<COLS;c++){
+      row.push(randomFruitIndex());
     }
-    renderGrid();
+    board.push(row);
+  }
 }
 
-function randomFruit() {
-    return fruits[Math.floor(Math.random() * fruits.length)];
-}
-
-function renderGrid() {
-    const game = document.getElementById("game");
-    game.innerHTML = "";
-    grid.forEach((row, r) => {
-        row.forEach((fruit, c) => {
-            const cell = document.createElement("div");
-            cell.classList.add("cell");
-            cell.dataset.row = r;
-            cell.dataset.col = c;
-            const img = document.createElement("img");
-            img.src = fruit;
-            cell.appendChild(img);
-            game.appendChild(cell);
-        });
-    });
-}
-
-function onPointerDown(e) {
-    e.preventDefault();
-    const target = e.target.closest(".cell");
-    if (!target) return;
-    const r = parseInt(target.dataset.row);
-    const c = parseInt(target.dataset.col);
-    selectedType = grid[r][c];
-    selectCell(target);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-}
-
-function onPointerMove(e) {
-    e.preventDefault();
-    const target = document.elementFromPoint(e.clientX, e.clientY)?.closest(".cell");
-    if (!target) return;
-    const r = parseInt(target.dataset.row);
-    const c = parseInt(target.dataset.col);
-    if (grid[r][c] === selectedType && !selectedCells.includes(target)) {
-        selectCell(target);
+function renderBoard(){
+  gridEl.innerHTML = '';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      const idx = board[r][c];
+      if(idx === null || typeof idx === 'undefined'){
+        cell.classList.add('empty');
+      } else {
+        // insérer SVG : clone de la fonction createSvg
+        const svg = FRUITS[idx].svg();
+        // data-name for scoring / selection logic
+        cell.dataset.name = FRUITS[idx].name;
+        cell.appendChild(svg);
+      }
+      gridEl.appendChild(cell);
     }
+  }
 }
 
-function onPointerUp() {
-    removeSelected();
+/* ---------- SVG ICONS (transparents) ---------- */
+/* Chaque fonction retourne un DOM SVG element (no white bg) */
+
+function makeSvgElement(innerHtml){
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox","0 0 100 100");
+  svg.setAttribute("aria-hidden","true");
+  svg.innerHTML = innerHtml;
+  return svg;
+}
+
+function makePineappleSVG(){
+  return makeSvgElement(`
+    <defs>
+      <linearGradient id="g1" x1="0" x2="1">
+        <stop offset="0" stop-color="#f6d365"/>
+        <stop offset="1" stop-color="#fda085"/>
+      </linearGradient>
+    </defs>
+    <g>
+      <ellipse cx="50" cy="60" rx="22" ry="30" fill="url(#g1)" stroke="#c6862b" stroke-width="2"/>
+      <path d="M35 40 c6-16 12-18 30-8" fill="none" stroke="#2e7d32" stroke-width="4" stroke-linecap="round"/>
+      <path d="M70 35 c4-10 8-12 12-10" fill="none" stroke="#2e7d32" stroke-width="4" stroke-linecap="round"/>
+    </g>`);
+}
+
+function makeStrawberrySVG(){
+  return makeSvgElement(`
+    <g>
+      <path d="M50 18 C33 18 22 36 22 50 C22 66 34 80 50 88 C66 80 78 66 78 50 C78 36 67 18 50 18 Z" fill="#ea4335" stroke="#b22222" stroke-width="2"/>
+      <rect x="44" y="8" width="12" height="10" rx="2" fill="#2e7d32"/>
+      <circle cx="36" cy="48" r="2" fill="#fff4"/>
+    </g>`);
+}
+
+function makeBananaSVG(){
+  return makeSvgElement(`
+    <g>
+      <path d="M20 60 C30 20 70 20 80 60 C75 64 45 70 20 60 Z" fill="#ffd54f" stroke="#e6b800" stroke-width="2"/>
+    </g>`);
+}
+
+function makeTomatoSVG(){
+  return makeSvgElement(`
+    <g>
+      <circle cx="50" cy="50" r="28" fill="#ef5350" stroke="#c62828" stroke-width="2"/>
+      <path d="M50 22 C46 20 42 22 40 28 C54 24 60 28 56 32" fill="#2e7d32"/>
+      <ellipse cx="40" cy="58" rx="2.6" ry="2" fill="#fff5" />
+    </g>`);
+}
+
+function makeAppleSVG(){
+  return makeSvgElement(`
+    <g>
+      <path d="M55 30 C66 30 76 40 72 52 C68 66 54 78 44 74 C34 70 24 58 28 46 C32 34 44 30 55 30 Z" fill="#f44336" stroke="#b71c1c" stroke-width="2"/>
+      <path d="M52 24 C50 20 46 18 42 22" stroke="#2e7d32" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>`);
+}
+
+function makeCarrotSVG(){
+  return makeSvgElement(`
+    <g>
+      <path d="M50 18 L60 30 L53 34 L70 60 L49 84 L30 60 L47 34 L40 30 Z" fill="#ff8a65" stroke="#d35400" stroke-width="2"/>
+      <path d="M44 18 C40 10 58 10 56 18" fill="#2e7d32" stroke="#2e7d32" stroke-width="2"/>
+    </g>`);
+}
+
+/* ---------- SELECTION (drag & drop tactile) ---------- */
+
+function startDrag(cell){
+  if(cell.classList.contains('empty')) return;
+  isDragging = true;
+  selectedCells = [];
+  selectedCoords = new Set();
+  selectionType = cell.dataset.name;
+  addSelection(cell);
+}
+
+function addSelection(cell){
+  // éviter double ajout
+  const key = cell.dataset.r + ',' + cell.dataset.c;
+  if(selectedCoords.has(key)) return;
+  if(cell.classList.contains('empty')) return;
+  if(cell.dataset.name !== selectionType) return; // bloque mélange
+  cell.classList.add('selected');
+  selectedCells.push(cell);
+  selectedCoords.add(key);
+}
+
+function endDragAndValidate(){
+  if(!isDragging) return;
+  isDragging = false;
+  if(selectedCells.length === 0){
+    selectionType = null;
+    return;
+  }
+  // 1) Retirer les cellules sélectionnées du board (set null)
+  selectedCells.forEach(cell=>{
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    board[r][c] = null;
+  });
+
+  // 2) animation des chutes puis mise à jour effective du board
+  animateFallThenApply(() => {
+    applyGravity();
+    fillTopWithNew();
+    renderBoard();
+    // reset sélection
     selectedCells = [];
-    selectedType = null;
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", onPointerUp);
+    selectedCoords = new Set();
+    selectionType = null;
+  });
 }
 
-function selectCell(cell) {
-    cell.classList.add("selected");
-    selectedCells.push(cell);
-}
+/* ---------- PHYSIQUE: gravity + refill ---------- */
 
-function removeSelected() {
-    selectedCells.forEach(cell => {
-        const r = parseInt(cell.dataset.row);
-        const c = parseInt(cell.dataset.col);
-        grid[r][c] = null;
-    });
-    dropFruits();
-}
-
-function dropFruits() {
-    for (let c = 0; c < cols; c++) {
-        let emptySpaces = 0;
-        for (let r = rows - 1; r >= 0; r--) {
-            if (grid[r][c] === null) {
-                emptySpaces++;
-            } else if (emptySpaces > 0) {
-                grid[r + emptySpaces][c] = grid[r][c];
-                grid[r][c] = null;
-            }
+function applyGravity(){
+  for(let c=0;c<COLS;c++){
+    for(let r=ROWS-1;r>=0;r--){
+      if(board[r][c] === null){
+        // trouver au-dessus
+        for(let rr=r-1; rr>=0; rr--){
+          if(board[rr][c] !== null){
+            board[r][c] = board[rr][c];
+            board[rr][c] = null;
+            break;
+          }
         }
-        for (let r = 0; r < emptySpaces; r++) {
-            grid[r][c] = randomFruit();
-        }
+      }
     }
-    renderGrid();
+  }
 }
 
-document.getElementById("game").addEventListener("pointerdown", onPointerDown);
+function fillTopWithNew(){
+  for(let c=0;c<COLS;c++){
+    for(let r=0;r<ROWS;r++){
+      if(board[r][c] === null) board[r][c] = randomFruitIndex();
+    }
+  }
+}
 
-createGrid();
+/* ---------- ANIMATION: clones qui tombent ---------- */
+
+function animateFallThenApply(done){
+  // On clone les images visibles (sauf celles sélectionnées) et on calcule pour chaque la distance à tomber
+  const cellEls = Array.from(gridEl.children);
+  // Set des coordonnées sélectionnées pour les ignorer pendant l'animation
+  const selSet = new Set(Array.from(selectedCells).map(el=> el.dataset.r+','+el.dataset.c));
+
+  const animations = [];
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const idx = r*COLS + c;
+      const cell = cellEls[idx];
+      const imgSvg = cell.querySelector('svg');
+      if(!imgSvg) continue;
+      if(selSet.has(r+','+c)) { 
+        // si sélectionnée, on veut la faire "disparaître" sans la faire tomber => on peut faire un petit fade
+        imgSvg.style.transition = 'transform .18s ease, opacity .18s ease';
+        imgSvg.style.opacity = '0';
+        continue;
+      }
+      // calculer combien de nulls sous (après suppression) — board est déjà modifié pour cellules sélectionnées (null)
+      let drop = 0;
+      for(let rr=r+1; rr<ROWS; rr++){
+        if(board[rr][c] === null) drop++;
+      }
+      if(drop === 0) continue;
+
+      const rect = cell.getBoundingClientRect();
+      const clone = imgSvg.cloneNode(true);
+      clone.style.position = 'absolute';
+      clone.style.left = rect.left + 'px';
+      clone.style.top = rect.top + 'px';
+      clone.style.width = rect.width + 'px';
+      clone.style.height = rect.height + 'px';
+      clone.style.transition = 'transform 420ms cubic-bezier(.22,.9,.32,1)';
+      clone.style.zIndex = 999;
+      document.body.appendChild(clone);
+
+      // cacher l'original pendant l'anim
+      imgSvg.style.visibility = 'hidden';
+
+      const moveY = drop * (rect.height + parseFloat(getComputedStyle(gridEl).gap || 8));
+      requestAnimationFrame(()=> { clone.style.transform = `translateY(${moveY}px)`; });
+
+      animations.push({clone, original: imgSvg});
+    }
+  }
+
+  // attendre la durée de l'animation puis nettoyer et appeler done
+  setTimeout(()=>{
+    animations.forEach(a=>{
+      a.clone.remove();
+      // l'original sera réaffiché lorsque renderBoard() sera appelé
+      if(a.original) a.original.style.visibility = '';
+    });
+    done();
+  }, 470);
+}
+
+/* ---------- GESTION DES ÉVÉNEMENTS TACTILES / SOURIS ---------- */
+
+function onPointerDown(e){
+  const pt = getPointFromEvent(e);
+  const el = document.elementFromPoint(pt.x, pt.y);
+  const cell = el && el.closest && el.closest('.cell');
+  if(!cell) return;
+  startDrag(cell);
+  // add listeners
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  // prevent default pour scroll pendant drag
+  e.preventDefault();
+}
+
+function onPointerMove(e){
+  if(!isDragging) return;
+  const pt = getPointFromEvent(e);
+  const el = document.elementFromPoint(pt.x, pt.y);
+  const cell = el && el.closest && el.closest('.cell');
+  if(cell) addSelection(cell);
+  e.preventDefault();
+}
+
+function onPointerUp(e){
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  endDragAndValidate();
+  e.preventDefault();
+}
+
+function getPointFromEvent(e){
+  if(e.touches && e.touches[0]) return {x: e.touches[0].clientX, y: e.touches[0].clientY};
+  return {x: e.clientX, y: e.clientY};
+}
+
+/* ---------- LANCEMENT ---------- */
+
+initBoard();
+renderBoard();
+
+/* pointer events */
+gridEl.addEventListener('pointerdown', onPointerDown);
+
+/* Responsive : recalculer la grille si rotation / resize */
+window.addEventListener('resize', ()=> {
+  // simple rerender pour garder tout propre (pas strictement nécessaire)
+  renderBoard();
+});
+
 </script>
-
 </body>
 </html>
