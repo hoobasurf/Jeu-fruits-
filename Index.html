@@ -1,469 +1,222 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Jeu Fruits - Mobile 6x6</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu Fruits Lilo & Stitch</title>
 <style>
-  :root{
-    --cols: 6;
-    --cell: 58px;
-    --gap: 8px;
-  }
-  html,body{height:100%;margin:0;padding:0;font-family:Inter,Arial,Helvetica,sans-serif}
-  body{
-    background: url('fruits.jpg') center/cover no-repeat fixed;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  #wrap{
-    width: calc(var(--cols) * var(--cell) + (var(--cols)-1) * var(--gap) + 28px);
-    max-width: 96vw;
-    padding: 12px;
-    background: rgba(0,0,0,0.30);
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-    color: #fff;
-    user-select:none;
-  }
-
-  #topbar{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:10px;
-  }
-
-  #targets{
-    display:flex;
-    gap:8px;
-    align-items:center;
-  }
-  .target{
-    display:flex;
-    gap:6px;
-    align-items:center;
-    padding:6px 8px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 10px;
-    min-width:56px;
-    justify-content:center;
-    font-weight:700;
-    font-size:14px;
-    color:#fff;
-  }
-  .target img{ width:22px; height:22px; display:block; }
-
-  #moves{
-    font-weight:800;
-    font-size:15px;
-    padding:6px 10px;
-    background: rgba(0,0,0,0.18);
-    border-radius:10px;
-  }
-
-  #grid{
-    display:grid;
-    grid-template-columns: repeat(var(--cols), var(--cell));
-    grid-auto-rows: var(--cell);
-    gap: var(--gap);
-    justify-content:center;
-    touch-action: none;
-  }
-
-  .cell{
-    width: var(--cell);
-    height: var(--cell);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background: transparent; /* transparent so user's fruits.jpg shows through */
-    border-radius: 12px;
-    cursor: pointer;
-    position: relative;
-    transition: transform .12s ease;
-    overflow: visible;
-  }
-  .cell.empty{ cursor: default; }
-
-  .cell.selected{
-    transform: scale(1.12);
-    z-index: 6;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.45);
-    filter: drop-shadow(0 6px 6px rgba(0,0,0,0.45));
-  }
-
-  .cell img{
-    width:86%;
-    height:86%;
-    display:block;
-    pointer-events:none;
-    background: transparent;
-  }
-
-  /* overlay modal */
-  #overlay { position: fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:2000; }
-  #overlay.show { display:flex; }
-  .modal {
-    background: rgba(0,0,0,0.88);
-    padding: 20px;
-    border-radius: 12px;
-    text-align:center;
-    color:#fff;
-    width:86%;
-    max-width:360px;
-  }
-  .modal h2{ font-size:30px; margin:6px 0; }
-  .modal p{ margin:8px 0 14px; color:#fffdf0; }
-  .buttons{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
-  .btn{ padding:10px 14px; border-radius:10px; border:none; font-weight:700; cursor:pointer; min-width:110px; }
-  .btn.primary{ background:#00b894; color:#032018; }
-  .btn.ghost{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.14); }
-
-  @media (max-width:360px){ :root{ --cell:52px; --gap:7px; } #wrap{ padding:10px; } }
+    body {
+        margin: 0;
+        padding: 0;
+        background: url('fruits.jpg') no-repeat center center fixed;
+        background-size: cover;
+        font-family: Arial, sans-serif;
+        color: white;
+        user-select: none;
+        touch-action: none;
+    }
+    #game {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        width: 95vw;
+        max-width: 600px;
+        margin: 80px auto 0 auto;
+    }
+    .cell {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cell img {
+        width: 90%;
+        height: 90%;
+        pointer-events: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .selected img {
+        transform: scale(1.15);
+        box-shadow: 0 0 15px 5px yellow;
+        border-radius: 10px;
+    }
+    #hud {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        font-size: 20px;
+        background: rgba(0,0,0,0.5);
+        padding: 10px 20px;
+        border-radius: 15px;
+    }
+    #endScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 40px;
+        z-index: 10;
+    }
+    #endScreen button {
+        font-size: 20px;
+        margin: 10px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+    }
 </style>
 </head>
 <body>
-  <div id="wrap" role="application">
-    <div id="topbar">
-      <div id="targets" aria-hidden="false"></div>
-      <div id="moves" aria-live="polite"></div>
-    </div>
-    <div id="grid" aria-hidden="false"></div>
-    <div style="text-align:center;margin-top:10px;color:#fffdf0;font-size:13px;">Glisse ton doigt — lâche pour valider (1 coup par glissé)</div>
-  </div>
 
-  <div id="overlay" role="dialog" aria-modal="true">
-    <div class="modal" id="modalBox">
-      <h2 id="modalTitle">GAGNÉ</h2>
-      <p id="modalMsg">Bravo !</p>
-      <div class="buttons">
-        <button class="btn primary" id="continueBtn">Continuer</button>
-        <button class="btn ghost" id="quitBtn">Quitter</button>
-      </div>
+<div id="hud">
+    <div id="objectives"></div>
+    <div>Coups : <span id="moves">30</span></div>
+</div>
+
+<div id="game"></div>
+
+<div id="endScreen">
+    <div id="endMessage"></div>
+    <div>
+        <button onclick="startGame()">Recommencer</button>
+        <button onclick="location.reload()">Quitter</button>
     </div>
-  </div>
+</div>
 
 <script>
-/* ---------- CONFIG ---------- */
-const ROWS = 6, COLS = 6;
-const TOTAL_MOVES = 30;
-const MAX_TARGET_TYPES = 3;
+const fruits = ["banane.png", "ananas.png", "fraise.png", "kiwi.png", "noix.png"];
+let grid = [];
+let selected = [];
+let objectives = {};
+let movesLeft = 30;
+let selectingType = null;
 
-/* Replace these filenames with your exact PNG filenames in your GitHub repo root or relative folder.
-   I assume the following files exist next to this index.html:
-   - banane.png
-   - ananas.png
-   - fraise.png
-   - kiwi.png
-   - noix.png
-   - fruits.jpg (background)
-*/
-const FRUITS = [
-  {name:'Banane', file:'banane.png'},
-  {name:'Ananas', file:'ananas.png'},
-  {name:'Fraise', file:'fraise.png'},
-  {name:'Kiwi', file:'kiwi.png'},
-  {name:'Noix', file:'noix.png'},
-];
-
-const gridEl = document.getElementById('grid');
-const targetsEl = document.getElementById('targets');
-const movesEl = document.getElementById('moves');
-const overlay = document.getElementById('overlay');
-const modalTitle = document.getElementById('modalTitle');
-const modalMsg = document.getElementById('modalMsg');
-const continueBtn = document.getElementById('continueBtn');
-const quitBtn = document.getElementById('quitBtn');
-
-/* ---------- STATE ---------- */
-let board = []; // board[r][c] = fruitIndex
-let movesLeft = TOTAL_MOVES;
-let targets = {}; // { name: remaining }
-let selectionType = null;
-let isDragging = false;
-let selectedCells = [];
-let selectedSet = new Set();
-
-/* ---------- UTIL ---------- */
-function randIdx(){ return Math.floor(Math.random()*FRUITS.length); }
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }}
-
-/* ---------- BOARD ---------- */
-function initBoard(){
-  board = [];
-  for(let r=0;r<ROWS;r++){
-    const row=[];
-    for(let c=0;c<COLS;c++){
-      row.push(randIdx());
-    }
-    board.push(row);
-  }
+function randomFruit() {
+    return fruits[Math.floor(Math.random() * fruits.length)];
 }
 
-function pickTargets(){
-  const types = 1 + Math.floor(Math.random()*MAX_TARGET_TYPES); // 1..3
-  const indices = FRUITS.map((_,i)=>i);
-  shuffle(indices);
-  targets = {};
-  for(let i=0;i<types;i++){
-    const idx = indices[i];
-    const qty = 6 + Math.floor(Math.random()*13); // 6..18
-    targets[FRUITS[idx].name] = qty;
-  }
+function startGame() {
+    document.getElementById("endScreen").style.display = "none";
+    movesLeft = 30;
+    objectives = {};
+    let chosen = [...fruits].sort(() => Math.random() - 0.5).slice(0, 3);
+    chosen.forEach(f => objectives[f] = Math.floor(Math.random() * 6) + 5);
+    renderObjectives();
+    grid = Array.from({length: 6}, () => Array.from({length: 6}, randomFruit));
+    drawGrid();
 }
 
-function renderTargets(){
-  targetsEl.innerHTML = '';
-  for(const name in targets){
-    const div = document.createElement('div');
-    div.className = 'target';
-    const fruit = FRUITS.find(f=>f.name===name);
-    const img = document.createElement('img');
-    img.src = fruit.file;
-    img.alt = name;
-    div.appendChild(img);
-    const span = document.createElement('div');
-    span.textContent = targets[name];
-    div.appendChild(span);
-    targetsEl.appendChild(div);
-  }
+function renderObjectives() {
+    document.getElementById("objectives").innerHTML = Object.entries(objectives)
+        .map(([f,q]) => `<img src="${f}" style="width:25px;height:25px;vertical-align:middle;"> ${q}`)
+        .join(" &nbsp; ");
 }
 
-function renderMoves(){ movesEl.textContent = `${movesLeft} coups`; }
-
-function renderBoard(){
-  gridEl.innerHTML = '';
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.r = r; cell.dataset.c = c;
-      const idx = board[r][c];
-      if(idx === null || typeof idx === 'undefined'){ cell.classList.add('empty'); }
-      else {
-        const img = document.createElement('img');
-        img.src = FRUITS[idx].file;
-        img.alt = FRUITS[idx].name;
-        cell.dataset.name = FRUITS[idx].name;
-        cell.appendChild(img);
-      }
-      gridEl.appendChild(cell);
-    }
-  }
+function drawGrid() {
+    const game = document.getElementById("game");
+    game.innerHTML = "";
+    grid.forEach((row,r) => {
+        row.forEach((fruit,c) => {
+            let cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            cell.innerHTML = `<img src="${fruit}">`;
+            game.appendChild(cell);
+        });
+    });
 }
 
-/* ---------- SELECTION (drag & auto-validate on up) ---------- */
-function startDrag(cell){
-  if(cell.classList.contains('empty')) return;
-  isDragging = true;
-  selectionType = cell.dataset.name;
-  selectedCells = [];
-  selectedSet = new Set();
-  addSelection(cell);
-}
-function addSelection(cell){
-  if(!isDragging) return;
-  if(cell.classList.contains('empty')) return;
-  if(cell.dataset.name !== selectionType) return;
-  const key = cell.dataset.r + ',' + cell.dataset.c;
-  if(selectedSet.has(key)) return;
-  selectedSet.add(key);
-  selectedCells.push(cell);
-  cell.classList.add('selected');
-}
-function endDrag(){
-  if(!isDragging) return;
-  isDragging = false;
-  if(selectedCells.length === 0){ selectionType = null; return; }
-  // count as one move
-  movesLeft = Math.max(0, movesLeft-1);
-  renderMoves();
-
-  // apply selection: decrement targets and remove from board
-  selectedCells.forEach(cell=>{
-    const r = +cell.dataset.r, c = +cell.dataset.c;
-    const name = cell.dataset.name;
-    if(targets[name] !== undefined && targets[name] > 0){
-      targets[name] = Math.max(0, targets[name]-1);
-    }
-    board[r][c] = null;
-  });
-  renderTargets();
-
-  // animate then update board
-  animateFallThenApply(()=>{
-    applyGravity();
-    refillTop();
-    renderBoard();
-    selectedCells.forEach(el=>el.classList.remove('selected'));
-    selectedCells = []; selectedSet = new Set(); selectionType = null;
-
-    if(checkWin()){ showOverlay(true); return; }
-    if(movesLeft <= 0){ showOverlay(false); return; }
-  });
+function getNeighbors(r, c) {
+    return [
+        [r-1, c], [r+1, c], [r, c-1], [r, c+1],
+        [r-1, c-1], [r-1, c+1], [r+1, c-1], [r+1, c+1]
+    ].filter(([rr,cc]) => rr>=0 && rr<6 && cc>=0 && cc<6);
 }
 
-/* ---------- GRAVITY & REFILL ---------- */
-function applyGravity(){
-  for(let c=0;c<COLS;c++){
-    for(let r=ROWS-1;r>=0;r--){
-      if(board[r][c] === null){
-        for(let rr=r-1; rr>=0; rr--){
-          if(board[rr][c] !== null){
-            board[r][c] = board[rr][c];
-            board[rr][c] = null;
-            break;
-          }
+function handleStart(e) {
+    selected = [];
+    selectingType = null;
+    handleMove(e);
+}
+function handleMove(e) {
+    let touch = e.touches ? e.touches[0] : e;
+    let el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el && el.tagName === "IMG") el = el.parentElement;
+    if (!el || !el.classList.contains("cell")) return;
+    let r = +el.dataset.row, c = +el.dataset.col;
+    if (!selected.some(s => s[0] === r && s[1] === c)) {
+        let fruit = grid[r][c];
+        if (!selectingType) selectingType = fruit;
+        if (fruit === selectingType) {
+            let last = selected[selected.length - 1];
+            if (!last || getNeighbors(last[0], last[1]).some(([rr,cc]) => rr === r && cc === c)) {
+                selected.push([r,c]);
+                el.classList.add("selected");
+            }
         }
-      }
     }
-  }
 }
-function refillTop(){
-  for(let c=0;c<COLS;c++){
-    for(let r=0;r<ROWS;r++){
-      if(board[r][c] === null || typeof board[r][c] === 'undefined'){
-        board[r][c] = randIdx();
-      }
+function handleEnd() {
+    if (selected.length > 0) {
+        movesLeft--;
+        document.getElementById("moves").textContent = movesLeft;
+        let type = selectingType;
+        selected.forEach(([r,c]) => { grid[r][c] = null; });
+        Object.keys(objectives).forEach(f => {
+            if (f === type) objectives[f] = Math.max(0, objectives[f] - selected.length);
+        });
+        dropFruits();
+        renderObjectives();
+        checkEnd();
     }
-  }
+    document.querySelectorAll(".selected").forEach(e => e.classList.remove("selected"));
+    selected = [];
+    selectingType = null;
 }
 
-/* ---------- ANIMATION: clones falling ---------- */
-function animateFallThenApply(done){
-  const cellEls = Array.from(gridEl.children);
-  const selKeys = new Set(selectedCells.map(el=> el.dataset.r+','+el.dataset.c));
-  const anims = [];
-
-  for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-      const idx = r*COLS + c;
-      const cell = cellEls[idx];
-      const img = cell.querySelector('img');
-      if(!img) continue;
-      if(selKeys.has(r+','+c)){
-        img.style.transition = 'opacity 180ms ease, transform 180ms ease';
-        img.style.opacity = '0';
-        img.style.transform = 'scale(.6)';
-        continue;
-      }
-      let drop = 0;
-      for(let rr=r+1; rr<ROWS; rr++){ if(board[rr][c] === null) drop++; }
-      if(drop === 0) continue;
-
-      const rect = cell.getBoundingClientRect();
-      const clone = img.cloneNode(true);
-      clone.style.position = 'absolute';
-      clone.style.left = rect.left + 'px';
-      clone.style.top = rect.top + 'px';
-      clone.style.width = rect.width + 'px';
-      clone.style.height = rect.height + 'px';
-      clone.style.transition = 'transform 420ms cubic-bezier(.22,.9,.32,1), opacity 420ms linear';
-      clone.style.zIndex = 999;
-      document.body.appendChild(clone);
-      img.style.visibility = 'hidden';
-
-      const gap = parseFloat(getComputedStyle(gridEl).gap) || 8;
-      const moveY = drop * (rect.height + gap);
-      requestAnimationFrame(()=> clone.style.transform = `translateY(${moveY}px)`);
-      anims.push({clone, original: img});
+function dropFruits() {
+    for (let c = 0; c < 6; c++) {
+        let col = grid.map(row => row[c]).filter(x => x !== null);
+        while (col.length < 6) col.unshift(randomFruit());
+        for (let r = 0; r < 6; r++) grid[r][c] = col[r];
     }
-  }
-
-  setTimeout(()=>{
-    anims.forEach(a=>{ a.clone.remove(); if(a.original) a.original.style.visibility = ''; });
-    done();
-  }, 480);
+    drawGrid();
 }
 
-/* ---------- WIN / LOSE ---------- */
-function checkWin(){
-  for(const k in targets) if(targets[k] > 0) return false;
-  return true;
-}
-function showOverlay(win){
-  overlay.classList.add('show');
-  if(win){
-    modalTitle.textContent = 'GAGNÉ';
-    modalMsg.textContent = 'Bravo — objectifs atteints !';
-    continueBtn.textContent = 'Continuer';
-    quitBtn.textContent = 'Quitter';
-  } else {
-    modalTitle.textContent = 'PERDU';
-    modalMsg.textContent = 'Plus de coups restants.';
-    continueBtn.textContent = 'Recommencer';
-    quitBtn.textContent = 'Quitter';
-  }
+function checkEnd() {
+    if (Object.values(objectives).every(v => v === 0)) {
+        endGame("GAGNÉ !");
+    } else if (movesLeft <= 0) {
+        endGame("PERDU !");
+    }
 }
 
-/* ---------- EVENTS ---------- */
-gridEl.addEventListener('pointerdown', (e)=>{
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  const cell = el && el.closest && el.closest('.cell');
-  if(!cell) return;
-  startDrag(cell);
-  window.addEventListener('pointermove', pointerMove);
-  window.addEventListener('pointerup', pointerUp);
-  e.preventDefault();
-});
-function pointerMove(e){
-  if(!isDragging) return;
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  const cell = el && el.closest && el.closest('.cell');
-  if(cell) addSelection(cell);
-  e.preventDefault();
-}
-function pointerUp(e){
-  window.removeEventListener('pointermove', pointerMove);
-  window.removeEventListener('pointerup', pointerUp);
-  endDrag();
-  e.preventDefault();
+function endGame(msg) {
+    document.getElementById("endMessage").textContent = msg;
+    document.getElementById("endScreen").style.display = "flex";
 }
 
-/* overlay buttons */
-continueBtn.addEventListener('click', ()=>{
-  if(checkWin()){
-    // continue: new objectives (keep board), reset moves
-    pickTargets();
-    renderTargets();
-    movesLeft = TOTAL_MOVES;
-    renderMoves();
-    overlay.classList.remove('show');
-  } else {
-    // after loss: restart full game
-    startNewGame();
-    overlay.classList.remove('show');
-  }
-});
-quitBtn.addEventListener('click', ()=>{
-  // Quit = reset game and close overlay
-  startNewGame();
-  overlay.classList.remove('show');
-});
+document.addEventListener("mousedown", handleStart);
+document.addEventListener("mousemove", handleMove);
+document.addEventListener("mouseup", handleEnd);
+document.addEventListener("touchstart", handleStart);
+document.addEventListener("touchmove", handleMove);
+document.addEventListener("touchend", handleEnd);
 
-/* ---------- NEW GAME ---------- */
-function startNewGame(){
-  movesLeft = TOTAL_MOVES;
-  initBoard();
-  pickTargets();
-  renderTargets();
-  renderMoves();
-  renderBoard();
-}
-
-/* ---------- START ---------- */
-initBoard();
-pickTargets();
-renderTargets();
-renderMoves();
-renderBoard();
+startGame();
 </script>
 </body>
 </html>
