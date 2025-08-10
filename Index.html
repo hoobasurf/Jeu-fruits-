@@ -52,7 +52,14 @@
     transition: transform 0.1s ease, filter 0.1s ease;
     border-radius: 10px; /* optionnel, arrondi */
 }
-
+.cell.selected {
+    box-shadow:
+        0 0 8px #0ff,
+        0 0 15px #0ff,
+        0 0 25px #0ff,
+        0 0 40px #0ff;
+    border-radius: 10px;
+}
 .selected img {
     transform: scale(1.2);  /* un peu moins grand */
     box-shadow:
