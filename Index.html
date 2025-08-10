@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Jeu Fruits - Mobile 6x6</title>
 <style>
-  :root {
+  :root{
     --cols: 6;
-    --cell: 58px;   /* taille case (mobile) */
+    --cell: 58px;
     --gap: 8px;
   }
   html,body{height:100%;margin:0;padding:0;font-family:Inter,Arial,Helvetica,sans-serif}
@@ -18,17 +18,17 @@
     justify-content:center;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    -webkit-font-smoothing:antialiased;
   }
 
   #wrap{
     width: calc(var(--cols) * var(--cell) + (var(--cols)-1) * var(--gap) + 28px);
     max-width: 96vw;
-    padding: 14px;
-    background: rgba(0,0,0,0.28);
-    border-radius: 16px;
+    padding: 12px;
+    background: rgba(0,0,0,0.30);
+    border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.45);
     color: #fff;
-    -webkit-user-select:none;
     user-select:none;
   }
 
@@ -42,10 +42,9 @@
 
   #targets{
     display:flex;
-    gap:10px;
+    gap:8px;
     align-items:center;
   }
-
   .target{
     display:flex;
     gap:6px;
@@ -58,14 +57,12 @@
     font-weight:700;
     font-size:14px;
     color:#fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
   }
-
-  .target svg{ width:20px; height:20px; display:block; }
+  .target img{ width:22px; height:22px; display:block; }
 
   #moves{
     font-weight:800;
-    font-size:16px;
+    font-size:15px;
     padding:6px 10px;
     background: rgba(0,0,0,0.18);
     border-radius:10px;
@@ -78,7 +75,6 @@
     gap: var(--gap);
     justify-content:center;
     touch-action: none;
-    -webkit-touch-callout:none;
   }
 
   .cell{
@@ -87,11 +83,11 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    background: transparent; /* pas de fond blanc */
+    background: transparent; /* transparent so user's fruits.jpg shows through */
     border-radius: 12px;
     cursor: pointer;
     position: relative;
-    transition: transform .14s ease;
+    transition: transform .12s ease;
     overflow: visible;
   }
   .cell.empty{ cursor: default; }
@@ -103,72 +99,50 @@
     filter: drop-shadow(0 6px 6px rgba(0,0,0,0.45));
   }
 
-  .cell svg{
+  .cell img{
     width:86%;
     height:86%;
     display:block;
     pointer-events:none;
+    background: transparent;
   }
 
-  #overlay {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    pointer-events: none;
-  }
-  #overlay.show { display:flex; pointer-events:auto; }
-
+  /* overlay modal */
+  #overlay { position: fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:2000; }
+  #overlay.show { display:flex; }
   .modal {
-    background: rgba(0,0,0,0.85);
-    padding: 22px;
-    border-radius: 14px;
-    text-align: center;
-    color: #fff;
-    width: 86%;
-    max-width: 360px;
+    background: rgba(0,0,0,0.88);
+    padding: 20px;
+    border-radius: 12px;
+    text-align:center;
+    color:#fff;
+    width:86%;
+    max-width:360px;
   }
-  .modal h2{ font-size: 32px; margin: 4px 0 12px; letter-spacing:1px;}
-  .modal p{ margin:8px 0 16px; font-size:16px; color: #fffdf0; }
-  .modal .buttons{ display:flex; gap:10px; justify-content:center; margin-top:6px;}
-  .btn {
-    padding:10px 14px;
-    border-radius:10px;
-    border:none;
-    font-weight:800;
-    cursor:pointer;
-    min-width:110px;
-  }
-  .btn.primary{ background:#00b894; color:#062018; }
+  .modal h2{ font-size:30px; margin:6px 0; }
+  .modal p{ margin:8px 0 14px; color:#fffdf0; }
+  .buttons{ display:flex; gap:10px; justify-content:center; margin-top:6px; }
+  .btn{ padding:10px 14px; border-radius:10px; border:none; font-weight:700; cursor:pointer; min-width:110px; }
+  .btn.primary{ background:#00b894; color:#032018; }
   .btn.ghost{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.14); }
 
-  #infoRow{ margin-top:10px; text-align:center; font-size:13px; color: #fffdf0; opacity:0.95; }
-
-  /* small responsive tweak */
-  @media (max-width:360px){
-    :root{ --cell: 52px; --gap:7px; }
-    #wrap{ padding:10px; }
-  }
+  @media (max-width:360px){ :root{ --cell:52px; --gap:7px; } #wrap{ padding:10px; } }
 </style>
 </head>
 <body>
-  <div id="wrap">
+  <div id="wrap" role="application">
     <div id="topbar">
-      <div id="targets"></div>
-      <div id="moves"></div>
+      <div id="targets" aria-hidden="false"></div>
+      <div id="moves" aria-live="polite"></div>
     </div>
-
     <div id="grid" aria-hidden="false"></div>
-
-    <div id="infoRow">Glisse ton doigt — lâche pour valider (1 coup par glissé)</div>
+    <div style="text-align:center;margin-top:10px;color:#fffdf0;font-size:13px;">Glisse ton doigt — lâche pour valider (1 coup par glissé)</div>
   </div>
 
   <div id="overlay" role="dialog" aria-modal="true">
     <div class="modal" id="modalBox">
       <h2 id="modalTitle">GAGNÉ</h2>
-      <p id="modalMsg">Tu as atteint les objectifs !</p>
+      <p id="modalMsg">Bravo !</p>
       <div class="buttons">
         <button class="btn primary" id="continueBtn">Continuer</button>
         <button class="btn ghost" id="quitBtn">Quitter</button>
@@ -178,16 +152,25 @@
 
 <script>
 /* ---------- CONFIG ---------- */
-const ROWS = 6;
-const COLS = 6;
+const ROWS = 6, COLS = 6;
 const TOTAL_MOVES = 30;
 const MAX_TARGET_TYPES = 3;
+
+/* Replace these filenames with your exact PNG filenames in your GitHub repo root or relative folder.
+   I assume the following files exist next to this index.html:
+   - banane.png
+   - ananas.png
+   - fraise.png
+   - kiwi.png
+   - noix.png
+   - fruits.jpg (background)
+*/
 const FRUITS = [
-  { name: 'Banane', makeSvg: makeBananaSVG },
-  { name: 'Ananas', makeSvg: makePineappleSVG },
-  { name: 'Fraise', makeSvg: makeStrawberrySVG },
-  { name: 'Kiwi', makeSvg: makeKiwiSVG },
-  { name: 'NoixCoco', makeSvg: makeCoconutSVG },
+  {name:'Banane', file:'banane.png'},
+  {name:'Ananas', file:'ananas.png'},
+  {name:'Fraise', file:'fraise.png'},
+  {name:'Kiwi', file:'kiwi.png'},
+  {name:'Noix', file:'noix.png'},
 ];
 
 const gridEl = document.getElementById('grid');
@@ -199,95 +182,53 @@ const modalMsg = document.getElementById('modalMsg');
 const continueBtn = document.getElementById('continueBtn');
 const quitBtn = document.getElementById('quitBtn');
 
+/* ---------- STATE ---------- */
 let board = []; // board[r][c] = fruitIndex
 let movesLeft = TOTAL_MOVES;
-let targets = {}; // { fruitName: remaining }
+let targets = {}; // { name: remaining }
 let selectionType = null;
 let isDragging = false;
-let selectedCells = []; // DOM cells
+let selectedCells = [];
 let selectedSet = new Set();
 
-/* ---------- Utils & SVG creators ---------- */
-function makeSvgElement(html){
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute('viewBox','0 0 100 100');
-  svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
-  svg.innerHTML = html;
-  return svg;
-}
+/* ---------- UTIL ---------- */
+function randIdx(){ return Math.floor(Math.random()*FRUITS.length); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }}
 
-/* Stylized SVGs (transparent) */
-function makeBananaSVG(){
-  return makeSvgElement(`<g>
-    <path d="M18 60 C30 22 70 22 84 62 C70 70 36 76 18 60 Z" fill="#FFD54F" stroke="#F0B429" stroke-width="2"/>
-    <path d="M24 56 C30 30 66 30 78 56" fill="none" stroke="#D99A00" stroke-width="1.8" stroke-linecap="round"/>
-  </g>`);
-}
-function makePineappleSVG(){
-  return makeSvgElement(`<g>
-    <ellipse cx="50" cy="56" rx="22" ry="30" fill="#F6D365" stroke="#C6862B" stroke-width="2"/>
-    <path d="M35 36 C42 18 58 18 66 36" fill="none" stroke="#2E7D32" stroke-width="4" stroke-linecap="round"/>
-  </g>`);
-}
-function makeStrawberrySVG(){
-  return makeSvgElement(`<g>
-    <path d="M50 18 C34 18 22 36 22 52 C22 68 36 82 50 88 C64 82 78 68 78 52 C78 36 66 18 50 18 Z" fill="#EA4335" stroke="#B22222" stroke-width="2"/>
-    <path d="M44 12 L56 12" stroke="#2E7D32" stroke-width="3" stroke-linecap="round"/>
-  </g>`);
-}
-function makeKiwiSVG(){
-  return makeSvgElement(`<g>
-    <circle cx="50" cy="50" r="28" fill="#7DAF3B" stroke="#6B8E23" stroke-width="2"/>
-    <circle cx="50" cy="50" r="18" fill="#6B3E2E" />
-    <circle cx="50" cy="50" r="6" fill="#2E1A12" />
-  </g>`);
-}
-function makeCoconutSVG(){
-  return makeSvgElement(`<g>
-    <circle cx="50" cy="50" r="28" fill="#A47147" stroke="#7C4A2B" stroke-width="2"/>
-    <path d="M36 46 C46 38 54 38 64 46" stroke="#FFFFFF55" stroke-width="2" stroke-linecap="round"/>
-  </g>`);
-}
-
-/* ---------- INITIALISE LA PARTIE ---------- */
-function randomIndex(){ return Math.floor(Math.random() * FRUITS.length); }
-
+/* ---------- BOARD ---------- */
 function initBoard(){
   board = [];
   for(let r=0;r<ROWS;r++){
     const row=[];
     for(let c=0;c<COLS;c++){
-      row.push(randomIndex());
+      row.push(randIdx());
     }
     board.push(row);
   }
 }
 
 function pickTargets(){
-  // choisir 1..MAX_TARGET_TYPES fruits distincts, avec quantité random raisonnable
-  const countTypes = 1 + Math.floor(Math.random() * MAX_TARGET_TYPES); // 1..3
-  const available = FRUITS.map((f,i)=>i);
-  shuffleArray(available);
+  const types = 1 + Math.floor(Math.random()*MAX_TARGET_TYPES); // 1..3
+  const indices = FRUITS.map((_,i)=>i);
+  shuffle(indices);
   targets = {};
-  for(let i=0;i<countTypes;i++){
-    const idx = available[i];
-    // quantité entre 6 and 18 (tweakable)
+  for(let i=0;i<types;i++){
+    const idx = indices[i];
     const qty = 6 + Math.floor(Math.random()*13); // 6..18
     targets[FRUITS[idx].name] = qty;
   }
 }
 
-/* ---------- RENDER ---------- */
 function renderTargets(){
   targetsEl.innerHTML = '';
   for(const name in targets){
     const div = document.createElement('div');
     div.className = 'target';
     const fruit = FRUITS.find(f=>f.name===name);
-    const svgel = fruit.makeSvg();
-    svgel.setAttribute('width','20'); svgel.setAttribute('height','20');
-    div.appendChild(svgel);
+    const img = document.createElement('img');
+    img.src = fruit.file;
+    img.alt = name;
+    div.appendChild(img);
     const span = document.createElement('div');
     span.textContent = targets[name];
     div.appendChild(span);
@@ -305,20 +246,20 @@ function renderBoard(){
       cell.className = 'cell';
       cell.dataset.r = r; cell.dataset.c = c;
       const idx = board[r][c];
-      if(idx === null || typeof idx === 'undefined'){
-        cell.classList.add('empty');
-      } else {
-        const svg = FRUITS[idx].makeSvg();
+      if(idx === null || typeof idx === 'undefined'){ cell.classList.add('empty'); }
+      else {
+        const img = document.createElement('img');
+        img.src = FRUITS[idx].file;
+        img.alt = FRUITS[idx].name;
         cell.dataset.name = FRUITS[idx].name;
-        cell.appendChild(svg);
+        cell.appendChild(img);
       }
       gridEl.appendChild(cell);
     }
   }
 }
 
-/* ---------- GAME LOGIC: selection drag, validate on up ---------- */
-
+/* ---------- SELECTION (drag & auto-validate on up) ---------- */
 function startDrag(cell){
   if(cell.classList.contains('empty')) return;
   isDragging = true;
@@ -327,68 +268,49 @@ function startDrag(cell){
   selectedSet = new Set();
   addSelection(cell);
 }
-
 function addSelection(cell){
   if(!isDragging) return;
   if(cell.classList.contains('empty')) return;
-  if(cell.dataset.name !== selectionType) return; // no mixing
+  if(cell.dataset.name !== selectionType) return;
   const key = cell.dataset.r + ',' + cell.dataset.c;
   if(selectedSet.has(key)) return;
   selectedSet.add(key);
   selectedCells.push(cell);
   cell.classList.add('selected');
 }
-
 function endDrag(){
   if(!isDragging) return;
   isDragging = false;
-
-  // Count as 1 move only if at least one cell selected
-  if(selectedCells.length === 0){
-    selectionType = null;
-    return;
-  }
-  movesLeft = Math.max(0, movesLeft - 1);
+  if(selectedCells.length === 0){ selectionType = null; return; }
+  // count as one move
+  movesLeft = Math.max(0, movesLeft-1);
   renderMoves();
 
-  // Apply selection: remove in board
+  // apply selection: decrement targets and remove from board
   selectedCells.forEach(cell=>{
-    const r = +cell.dataset.r; const c = +cell.dataset.c;
+    const r = +cell.dataset.r, c = +cell.dataset.c;
     const name = cell.dataset.name;
-    // decrement target if exists
     if(targets[name] !== undefined && targets[name] > 0){
-      // reduce by 1 for each selected cell, up to remaining target
-      targets[name] = Math.max(0, targets[name] - 1);
+      targets[name] = Math.max(0, targets[name]-1);
     }
     board[r][c] = null;
   });
-
   renderTargets();
 
-  // animate fall then update board (fill top with new)
+  // animate then update board
   animateFallThenApply(()=>{
     applyGravity();
     refillTop();
     renderBoard();
-    // reset selection css
-    selectedCells.forEach(el => el.classList.remove('selected'));
-    selectedCells = [];
-    selectedSet = new Set();
-    selectionType = null;
+    selectedCells.forEach(el=>el.classList.remove('selected'));
+    selectedCells = []; selectedSet = new Set(); selectionType = null;
 
-    // Check win/lose
-    if(checkWin()){
-      showOverlay(true);
-      return;
-    }
-    if(movesLeft <= 0){
-      showOverlay(false);
-      return;
-    }
+    if(checkWin()){ showOverlay(true); return; }
+    if(movesLeft <= 0){ showOverlay(false); return; }
   });
 }
 
-/* ---------- gravity / refill ---------- */
+/* ---------- GRAVITY & REFILL ---------- */
 function applyGravity(){
   for(let c=0;c<COLS;c++){
     for(let r=ROWS-1;r>=0;r--){
@@ -404,47 +326,40 @@ function applyGravity(){
     }
   }
 }
-
 function refillTop(){
   for(let c=0;c<COLS;c++){
     for(let r=0;r<ROWS;r++){
       if(board[r][c] === null || typeof board[r][c] === 'undefined'){
-        board[r][c] = randomIndexExcept(); // random
+        board[r][c] = randIdx();
       }
     }
   }
 }
 
-function randomIndexExcept(){ return Math.floor(Math.random() * FRUITS.length); }
-
 /* ---------- ANIMATION: clones falling ---------- */
 function animateFallThenApply(done){
   const cellEls = Array.from(gridEl.children);
-  const selectedKeys = new Set(selectedCells.map(el=> el.dataset.r+','+el.dataset.c));
+  const selKeys = new Set(selectedCells.map(el=> el.dataset.r+','+el.dataset.c));
   const anims = [];
 
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS;c++){
       const idx = r*COLS + c;
       const cell = cellEls[idx];
-      const svg = cell.querySelector('svg');
-      if(!svg) continue;
-      // if selected, fade out
-      if(selectedKeys.has(r+','+c)){
-        svg.style.transition = 'opacity 200ms ease, transform 200ms ease';
-        svg.style.opacity = '0';
-        svg.style.transform = 'scale(.6)';
+      const img = cell.querySelector('img');
+      if(!img) continue;
+      if(selKeys.has(r+','+c)){
+        img.style.transition = 'opacity 180ms ease, transform 180ms ease';
+        img.style.opacity = '0';
+        img.style.transform = 'scale(.6)';
         continue;
       }
-      // compute drop distance after removals (board already has nulls)
       let drop = 0;
-      for(let rr=r+1; rr<ROWS; rr++){
-        if(board[rr][c] === null) drop++;
-      }
+      for(let rr=r+1; rr<ROWS; rr++){ if(board[rr][c] === null) drop++; }
       if(drop === 0) continue;
 
       const rect = cell.getBoundingClientRect();
-      const clone = svg.cloneNode(true);
+      const clone = img.cloneNode(true);
       clone.style.position = 'absolute';
       clone.style.left = rect.left + 'px';
       clone.style.top = rect.top + 'px';
@@ -453,37 +368,31 @@ function animateFallThenApply(done){
       clone.style.transition = 'transform 420ms cubic-bezier(.22,.9,.32,1), opacity 420ms linear';
       clone.style.zIndex = 999;
       document.body.appendChild(clone);
-      svg.style.visibility = 'hidden';
+      img.style.visibility = 'hidden';
 
       const gap = parseFloat(getComputedStyle(gridEl).gap) || 8;
       const moveY = drop * (rect.height + gap);
       requestAnimationFrame(()=> clone.style.transform = `translateY(${moveY}px)`);
-      anims.push({clone, original: svg});
+      anims.push({clone, original: img});
     }
   }
 
   setTimeout(()=>{
-    anims.forEach(a=>{
-      a.clone.remove();
-      if(a.original) a.original.style.visibility = '';
-    });
+    anims.forEach(a=>{ a.clone.remove(); if(a.original) a.original.style.visibility = ''; });
     done();
-  }, 470);
+  }, 480);
 }
 
 /* ---------- WIN / LOSE ---------- */
 function checkWin(){
-  for(const k in targets){
-    if(targets[k] > 0) return false;
-  }
+  for(const k in targets) if(targets[k] > 0) return false;
   return true;
 }
-
 function showOverlay(win){
   overlay.classList.add('show');
   if(win){
     modalTitle.textContent = 'GAGNÉ';
-    modalMsg.textContent = 'Bravo ! objectifs atteints.';
+    modalMsg.textContent = 'Bravo — objectifs atteints !';
     continueBtn.textContent = 'Continuer';
     quitBtn.textContent = 'Quitter';
   } else {
@@ -494,11 +403,7 @@ function showOverlay(win){
   }
 }
 
-/* ---------- HELPERS ---------- */
-function shuffleArray(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
-
 /* ---------- EVENTS ---------- */
-
 gridEl.addEventListener('pointerdown', (e)=>{
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const cell = el && el.closest && el.closest('.cell');
@@ -508,7 +413,6 @@ gridEl.addEventListener('pointerdown', (e)=>{
   window.addEventListener('pointerup', pointerUp);
   e.preventDefault();
 });
-
 function pointerMove(e){
   if(!isDragging) return;
   const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -516,7 +420,6 @@ function pointerMove(e){
   if(cell) addSelection(cell);
   e.preventDefault();
 }
-
 function pointerUp(e){
   window.removeEventListener('pointermove', pointerMove);
   window.removeEventListener('pointerup', pointerUp);
@@ -526,22 +429,26 @@ function pointerUp(e){
 
 /* overlay buttons */
 continueBtn.addEventListener('click', ()=>{
-  // if won -> continue: start next level (new targets, keep board)
   if(checkWin()){
-    pickTargets(); renderTargets(); movesLeft = TOTAL_MOVES; renderMoves(); overlay.classList.remove('show');
+    // continue: new objectives (keep board), reset moves
+    pickTargets();
+    renderTargets();
+    movesLeft = TOTAL_MOVES;
+    renderMoves();
+    overlay.classList.remove('show');
   } else {
-    // Recommencer after loss = full reset
+    // after loss: restart full game
     startNewGame();
     overlay.classList.remove('show');
   }
 });
 quitBtn.addEventListener('click', ()=>{
-  // Quit = reset and close overlay (or navigate away)
+  // Quit = reset game and close overlay
   startNewGame();
   overlay.classList.remove('show');
 });
 
-/* start new full game */
+/* ---------- NEW GAME ---------- */
 function startNewGame(){
   movesLeft = TOTAL_MOVES;
   initBoard();
@@ -549,19 +456,14 @@ function startNewGame(){
   renderTargets();
   renderMoves();
   renderBoard();
-  overlay.classList.remove('show');
 }
 
 /* ---------- START ---------- */
-function randomSeedSetup(){
-  initBoard();
-  pickTargets();
-  renderTargets();
-  renderMoves();
-  renderBoard();
-}
-randomSeedSetup();
-
+initBoard();
+pickTargets();
+renderTargets();
+renderMoves();
+renderBoard();
 </script>
 </body>
 </html>
