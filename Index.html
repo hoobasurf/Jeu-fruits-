@@ -18,18 +18,24 @@
     }
     #scoreboard {
         background: rgba(255, 255, 255, 0.7);
-        padding: 10px 20px;
-        border-radius: 15px;
+        padding: 20px 30px;
+        border-radius: 20px;
         display: flex;
-        gap: 15px;
-        margin-top: -1cm; /* Remonté de 1cm */
-        font-size: 18px;
+        align-items: center;
+        gap: 30px;
+        margin-top: -1cm;
+        font-size: 22px;
         font-weight: bold;
+        user-select: none;
+        box-shadow: 0 0 15px rgba(0,255,255,0.3);
     }
-    /* Agrandissement des images dans l'encadré */
     #scoreboard img {
-        width: 40px !important;
-        height: 40px !important;
+        width: auto;
+        height: 60px;
+        border-radius: 12px;
+        box-shadow:
+          0 0 8px #0ff,
+          0 0 15px #0ff;
     }
     #game {
         display: grid;
@@ -129,7 +135,7 @@ function initObjectives() {
 function updateScoreboard() {
     document.getElementById("moves").textContent = "Coups : " + moves;
     document.getElementById("objectives").innerHTML = targetFruits.map(f => 
-        `<img src="${f}"> ${objectives[f]}`
+        `<img src="${f}" alt="${f}"> ${objectives[f]}`
     ).join(" ");
 }
 
