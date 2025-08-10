@@ -22,7 +22,9 @@
         border-radius: 15px;
         display: flex;
         gap: 15px;
-        margin-top: 10px;
+        margin-top: 0;
+        position: relative;
+        top: -1cm;
         font-size: 18px;
         font-weight: bold;
     }
@@ -126,7 +128,7 @@ function initObjectives() {
 function updateScoreboard() {
     document.getElementById("moves").textContent = "Coups : " + moves;
     document.getElementById("objectives").innerHTML = targetFruits.map(f => 
-        `<img src="${f}" style="width:25px;height:25px;"> ${objectives[f]}`
+        `<img src="${f}" style="width:40px; height:40px;"> ${objectives[f]}`
     ).join(" ");
 }
 
