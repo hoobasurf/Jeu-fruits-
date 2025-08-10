@@ -13,6 +13,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;  /* Ajouté pour centrage vertical */
+        height: 100vh;            /* Ajouté pour prendre toute la hauteur */
     }
     #scoreboard {
         background: rgba(255, 255, 255, 0.7);
@@ -29,7 +31,7 @@
         grid-template-columns: repeat(5, 70px);
         grid-template-rows: repeat(5, 70px);
         gap: 5px;
-        margin-top: 20px;
+        margin-top: 0;  /* Modifié pour meilleur centrage vertical */
         touch-action: none;
     }
     .cell {
@@ -49,7 +51,13 @@
     }
     .selected img {
         transform: scale(1.2);
-        filter: drop-shadow(0 0 10px yellow);
+        box-shadow:
+            0 0 5px #fff,
+            0 0 10px #0ff,
+            0 0 20px #0ff,
+            0 0 40px #0ff,
+            0 0 80px #0ff;
+        border-radius: 8px;
     }
     #endScreen {
         position: fixed;
