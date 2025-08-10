@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Jeu de Fruits</title>
 <style>
     body {
@@ -13,8 +13,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;  /* Ajouté pour centrage vertical */
-        height: 100vh;            /* Ajouté pour prendre toute la hauteur */
+        justify-content: center;
+        height: 100vh;
     }
     #scoreboard {
         background: rgba(255, 255, 255, 0.7);
@@ -22,45 +22,46 @@
         border-radius: 15px;
         display: flex;
         gap: 15px;
-        margin-top: 0;
-        position: relative;
-        top: -1cm;
+        margin-top: -1cm; /* Remonté de 1cm */
         font-size: 18px;
         font-weight: bold;
     }
+    /* Agrandissement des images dans l'encadré */
+    #scoreboard img {
+        width: 40px !important;
+        height: 40px !important;
+    }
     #game {
-    display: grid;
-    grid-template-columns: repeat(5, 70px);
-    grid-template-rows: repeat(5, 70px);
-    gap: 5px;
-    margin-top: 0;
-    touch-action: none;
-}
-
-.cell {
-    width: 80px;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.cell img {
-    width: 200%;
-    height: 200%;
-    object-fit: contain;
-    pointer-events: none;
-    user-select: none;
-    transition: transform 0.1s ease, filter 0.1s ease;
-    border-radius: 10px; /* optionnel, arrondi */
-}
-.cell.selected {
-    box-shadow:
-        0 0 8px #0ff,
-        0 0 15px #0ff,
-        0 0 25px #0ff,
-        0 0 40px #0ff;
-    border-radius: 10px;
-
+        display: grid;
+        grid-template-columns: repeat(5, 70px);
+        grid-template-rows: repeat(5, 70px);
+        gap: 5px;
+        margin-top: 0;
+        touch-action: none;
+    }
+    .cell {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .cell img {
+        width: 200%;
+        height: 200%;
+        object-fit: contain;
+        pointer-events: none;
+        user-select: none;
+        transition: transform 0.1s ease, filter 0.1s ease;
+        border-radius: 10px;
+    }
+    .cell.selected {
+        box-shadow:
+            0 0 8px #0ff,
+            0 0 15px #0ff,
+            0 0 25px #0ff,
+            0 0 40px #0ff;
+        border-radius: 10px;
     }
     #endScreen {
         position: fixed;
@@ -128,7 +129,7 @@ function initObjectives() {
 function updateScoreboard() {
     document.getElementById("moves").textContent = "Coups : " + moves;
     document.getElementById("objectives").innerHTML = targetFruits.map(f => 
-        `<img src="${f}" style="width:40px; height:40px;"> ${objectives[f]}`
+        `<img src="${f}"> ${objectives[f]}`
     ).join(" ");
 }
 
